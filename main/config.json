@@ -11,6 +11,11 @@
     }
   ],
   "dockerGroup": [
-
+    {
+      "name": "dockerHub",
+      "url": "https://registry-1.docker.io",
+      "username": "suikast42",
+      "password":  "EmirKaan19082014"
+    }
   ]
 }

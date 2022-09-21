@@ -19,7 +19,7 @@ func main() {
 		panic(err)
 	}
 
-	var nexusConfig NexusConfig
+	var nexusConfig client.NexusConfig
 	err = viper.Unmarshal(&nexusConfig)
 	if err != nil {
 		panic(err)
@@ -57,21 +57,9 @@ func main() {
 		panic(err)
 	}
 
-	err = nexusClient.AddDockerRepos(realms)
+	err = nexusClient.AddDockerRepos(nexusConfig.DockerGroup)
 	if err != nil {
 		panic(err)
-	}
-}
-
-type NexusConfig struct {
-	Address    string `json:"address"`
-	Port       int    `json:"port"`
-	Password   string `json:"password"`
-	BlobStores []struct {
-		Name     string `json:"name"`
-		Capacity int    `json:"capacity"`
-	} `json:"blobStores"`
-	DockerGroup []struct {
 	}
 }
 

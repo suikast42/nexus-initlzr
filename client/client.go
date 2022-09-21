@@ -238,17 +238,35 @@ func newBlobStoreRequest(name string, space int) blobStoreRequest {
 	}
 }
 
-func (r *ClientConfig) AddDockerRepos(realmsRequest []string) error {
+func (r *ClientConfig) AddDockerRepos(repos []DockerGroup) error {
 	pushRepo, err := r.getOrCreateDockerLocalRepo(false)
 	if err != nil {
 		return err
 	}
 	logger.Info(fmt.Sprintf("Repo docker pushRepo is there %s", pushRepo.Name))
+
 	pullRepo, err := r.getOrCreateDockerGroupRepo(false)
 	if err != nil {
 		return err
 	}
 	logger.Info(fmt.Sprintf("Repo docker pullRepo is there %s", pullRepo.Name))
+
+	for _, repoReq := range repos {
+		repo, err := r.getOrCreateProxyRepo(false, repoReq)
+		if err != nil {
+			return err
+		}
+		logger.Info(fmt.Sprintf("Repo docker pullRepo is there %s", repo.Name))
+
+		members := koazee.StreamOf(pullRepo.Group.MemberNames)
+		contains, _ := members.Contains(repoReq.Name)
+		if !contains {
+			logger.Error("Pull repo does not contain repo . Implement this")
+		}
+
+	}
+
+	logger.Info(fmt.Sprintf("Repo docker pushRepo is there %s", pushRepo.Name))
 	return nil
 }
 
@@ -335,7 +353,7 @@ func (r *ClientConfig) getOrCreateDockerLocalRepo(secondCall bool) (*dockerLocal
 }
 func (r *ClientConfig) getOrCreateDockerGroupRepo(secondCall bool) (*dockerGroupRepo, error) {
 	var dockerGroup *dockerGroupRepo
-	{ // Determine the active realms
+	{
 		url := fmt.Sprintf(r.baseUrl() + "repositories/docker/group/dockerGroup")
 		request, err := http.NewRequest("GET", url, nil)
 		if err != nil {
@@ -442,6 +460,87 @@ func newDockerLocalRepo() dockerLocalRepo {
 		},
 	}
 }
+func (r *ClientConfig) getOrCreateProxyRepo(secondCall bool, repo DockerGroup) (*dockerLocalRepo, error) {
+	var dockerLocalRepo *dockerLocalRepo
+	{
+		url := fmt.Sprintf(r.baseUrl() + fmt.Sprintf("repositories/docker/proxy/%s", repo.Name))
+		request, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return nil, err
+		}
+		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("accept", "application/json")
+		request.SetBasicAuth("admin", r.Password)
+
+		response, err := r.Client.Do(request)
+		if err != nil {
+			return nil, err
+		}
+		// Close request body anyway
+		defer func() {
+			_ = response.Body.Close()
+		}()
+		switch status := response.StatusCode; status {
+		case http.StatusOK:
+			{ // Docker group repo found
+				content, err := io.ReadAll(response.Body)
+				if err != nil {
+					return nil, err
+				}
+				err = json.Unmarshal(content, &dockerLocalRepo)
+				if err != nil {
+					return nil, err
+				}
+			}
+			// Create docker repo
+		case http.StatusNotFound:
+			{
+				if secondCall {
+					return nil, NexusError{
+						message:    fmt.Sprintf("Can't create repo %s", repo.Name),
+						statuscode: status,
+					}
+				}
+				url := fmt.Sprintf(r.baseUrl() + "repositories/docker/proxy")
+				dockerLocalRepo := newDockerProxyRepos(repo.Name, repo.Url, repo.Username, repo.Password)
+				b, err := json.Marshal(dockerLocalRepo)
+				if err != nil {
+					return nil, err
+				}
+				request, err := http.NewRequest("POST", url, bytes.NewBuffer(b))
+				if err != nil {
+					return nil, err
+				}
+				request.Header.Set("Content-Type", "application/json")
+				request.Header.Set("accept", "application/json")
+				request.SetBasicAuth("admin", r.Password)
+				response, err := r.Client.Do(request)
+				if err != nil {
+					return nil, err
+				}
+				defer func() {
+					_ = response.Body.Close()
+				}()
+				switch status := response.StatusCode; status {
+				case http.StatusCreated:
+					return r.getOrCreateProxyRepo(true, repo)
+				default:
+					return nil, NexusError{
+						message:    "Unknown error",
+						statuscode: status,
+					}
+				}
+
+			}
+		default:
+			return nil, NexusError{
+				message:    "Unknown error",
+				statuscode: status,
+			}
+		}
+	}
+	return dockerLocalRepo, nil
+}
 
 type dockerLocalRepo struct {
 	Name    string `json:"name"`
@@ -517,4 +616,146 @@ type dockerGroupRepo struct {
 		HttpsPort      int    `json:"httpsPort,omitempty"`
 		Subdomain      string `json:"subdomain,omitempty"`
 	} `json:"docker"`
+}
+
+func newDockerProxyRepos(name string, url string, username string, password string) dockerProxyRepos {
+	repo := dockerProxyRepos{
+		Name:   name,
+		Online: true,
+		Storage: struct {
+			BlobStoreName               string `json:"blobStoreName"`
+			StrictContentTypeValidation bool   `json:"strictContentTypeValidation"`
+		}{
+			BlobStoreName:               "docker",
+			StrictContentTypeValidation: false,
+		},
+		Proxy: struct {
+			RemoteUrl      string `json:"remoteUrl"`
+			ContentMaxAge  int    `json:"contentMaxAge"`
+			MetadataMaxAge int    `json:"metadataMaxAge"`
+		}{
+			RemoteUrl:      url,
+			ContentMaxAge:  1440,
+			MetadataMaxAge: 1440,
+		},
+		NegativeCache: struct {
+			Enabled    bool `json:"enabled"`
+			TimeToLive int  `json:"timeToLive"`
+		}{Enabled: true, TimeToLive: 1440},
+		HttpClient: struct {
+			Blocked    bool `json:"blocked"`
+			AutoBlock  bool `json:"autoBlock"`
+			Connection struct {
+				Retries                 int    `json:"retries"`
+				UserAgentSuffix         string `json:"userAgentSuffix"`
+				Timeout                 int    `json:"timeout"`
+				EnableCircularRedirects bool   `json:"enableCircularRedirects"`
+				EnableCookies           bool   `json:"enableCookies"`
+				UseTrustStore           bool   `json:"useTrustStore"`
+			} `json:"connection"`
+			Authentication struct {
+				Type       string `json:"type"`
+				Username   string `json:"username"`
+				Password   string `json:"password"`
+				NtlmHost   string `json:"ntlmHost"`
+				NtlmDomain string `json:"ntlmDomain"`
+			} `json:"authentication"`
+		}{
+			Blocked:   false,
+			AutoBlock: false,
+			Connection: struct {
+				Retries                 int    `json:"retries"`
+				UserAgentSuffix         string `json:"userAgentSuffix"`
+				Timeout                 int    `json:"timeout"`
+				EnableCircularRedirects bool   `json:"enableCircularRedirects"`
+				EnableCookies           bool   `json:"enableCookies"`
+				UseTrustStore           bool   `json:"useTrustStore"`
+			}{Timeout: 20},
+		},
+
+		DockerProxy: struct {
+			IndexType string `json:"indexType"`
+			IndexUrl  string `json:"indexUrl"`
+		}{},
+		Docker: struct {
+			V1Enabled      bool   `json:"v1Enabled"`
+			ForceBasicAuth bool   `json:"forceBasicAuth"`
+			HttpPort       int    `json:"httpPort"`
+			HttpsPort      int    `json:"httpsPort"`
+			Subdomain      string `json:"subdomain"`
+		}{V1Enabled: false, ForceBasicAuth: false, HttpPort: 8500, HttpsPort: 8501},
+	}
+
+	if "dockerHub" == name {
+		repo.DockerProxy.IndexType = "HUB"
+		repo.DockerProxy.IndexUrl = "https://index.docker.io"
+	} else {
+		repo.DockerProxy.IndexType = "REGISTRY"
+	}
+	if len(username) > 0 {
+		repo.HttpClient.Authentication.Username = username
+		repo.HttpClient.Authentication.Type = "username"
+	}
+	if len(password) > 0 {
+		repo.HttpClient.Authentication.Password = password
+	}
+	return repo
+}
+
+type dockerProxyRepos struct {
+	Name    string `json:"name"`
+	Online  bool   `json:"online"`
+	Storage struct {
+		BlobStoreName               string `json:"blobStoreName"`
+		StrictContentTypeValidation bool   `json:"strictContentTypeValidation"`
+	} `json:"storage"`
+	Cleanup *struct {
+		PolicyNames []string `json:"policyNames"`
+	} `json:"cleanup,omitempty"`
+	Proxy struct {
+		RemoteUrl      string `json:"remoteUrl"`
+		ContentMaxAge  int    `json:"contentMaxAge"`
+		MetadataMaxAge int    `json:"metadataMaxAge"`
+	} `json:"proxy"`
+	NegativeCache struct {
+		Enabled    bool `json:"enabled"`
+		TimeToLive int  `json:"timeToLive"`
+	} `json:"negativeCache"`
+	HttpClient struct {
+		Blocked    bool `json:"blocked"`
+		AutoBlock  bool `json:"autoBlock"`
+		Connection struct {
+			Retries                 int    `json:"retries"`
+			UserAgentSuffix         string `json:"userAgentSuffix"`
+			Timeout                 int    `json:"timeout"`
+			EnableCircularRedirects bool   `json:"enableCircularRedirects"`
+			EnableCookies           bool   `json:"enableCookies"`
+			UseTrustStore           bool   `json:"useTrustStore"`
+		} `json:"connection"`
+		Authentication struct {
+			//username, ntlm
+			Type       string `json:"type"`
+			Username   string `json:"username"`
+			Password   string `json:"password"`
+			NtlmHost   string `json:"ntlmHost"`
+			NtlmDomain string `json:"ntlmDomain"`
+		} `json:"authentication"`
+	} `json:"httpClient"`
+	RoutingRuleName *string `json:"routingRuleName,omitempty"`
+	Replication     *struct {
+		PreemptivePullEnabled bool   `json:"preemptivePullEnabled"`
+		AssetPathRegex        string `json:"assetPathRegex"`
+	} `json:"replication,omitempty"`
+	Docker struct {
+		V1Enabled      bool   `json:"v1Enabled"`
+		ForceBasicAuth bool   `json:"forceBasicAuth"`
+		HttpPort       int    `json:"httpPort"`
+		HttpsPort      int    `json:"httpsPort"`
+		Subdomain      string `json:"subdomain"`
+	} `json:"docker,omitempty"`
+	DockerProxy struct {
+		//[ HUB, REGISTRY, CUSTOM ]
+		IndexType string `json:"indexType"`
+		IndexUrl  string `json:"indexUrl"`
+	} `json:"dockerProxy"`
 }
