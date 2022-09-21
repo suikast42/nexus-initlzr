@@ -693,13 +693,7 @@ func newDockerProxyRepos(name string, url string, username string, password stri
 				EnableCookies           bool   `json:"enableCookies"`
 				UseTrustStore           bool   `json:"useTrustStore"`
 			} `json:"connection,omitempty"`
-			Authentication struct {
-				Type       string `json:"type"`
-				Username   string `json:"username"`
-				Password   string `json:"password"`
-				NtlmHost   string `json:"ntlmHost"`
-				NtlmDomain string `json:"ntlmDomain"`
-			} `json:"authentication"`
+			Authentication *authentication `json:"authentication,omitempty"`
 		}{
 			Blocked:   false,
 			AutoBlock: false,
@@ -707,7 +701,7 @@ func newDockerProxyRepos(name string, url string, username string, password stri
 
 		DockerProxy: struct {
 			IndexType string `json:"indexType"`
-			IndexUrl  string `json:"indexUrl"`
+			IndexUrl  string `json:"indexUrl,omitempty"`
 		}{},
 		Docker: struct {
 			V1Enabled      bool   `json:"v1Enabled"`
@@ -727,17 +721,21 @@ func newDockerProxyRepos(name string, url string, username string, password stri
 		repo.DockerProxy.IndexType = "REGISTRY"
 	}
 	if len(username) > 0 {
-		repo.HttpClient.Authentication.Username = username
-		repo.HttpClient.Authentication.Type = "username"
+		repo.HttpClient.Authentication = &authentication{Username: username, Password: password, Type: "username"}
 	}
-	if len(password) > 0 {
-		repo.HttpClient.Authentication.Password = password
-	}
-	marshal, _ := json.Marshal(repo)
-	fmt.Printf("%+v\n", string(marshal))
+
+	//marshal, _ := json.Marshal(repo)
+	//fmt.Printf("%+v\n", string(marshal))
 	return repo
 }
 
+type authentication struct {
+	Type       string `json:"type"`
+	Username   string `json:"username"`
+	Password   string `json:"password"`
+	NtlmHost   string `json:"ntlmHost"`
+	NtlmDomain string `json:"ntlmDomain"`
+}
 type dockerProxyRepos struct {
 	Name    string `json:"name"`
 	Online  bool   `json:"online"`
@@ -768,14 +766,7 @@ type dockerProxyRepos struct {
 			EnableCookies           bool   `json:"enableCookies"`
 			UseTrustStore           bool   `json:"useTrustStore"`
 		} `json:"connection,omitempty"`
-		Authentication struct {
-			//username, ntlm
-			Type       string `json:"type"`
-			Username   string `json:"username"`
-			Password   string `json:"password"`
-			NtlmHost   string `json:"ntlmHost"`
-			NtlmDomain string `json:"ntlmDomain"`
-		} `json:"authentication"`
+		Authentication *authentication `json:"authentication,omitempty"`
 	} `json:"httpClient"`
 	RoutingRuleName *string `json:"routingRuleName,omitempty"`
 	Replication     *struct {
@@ -792,6 +783,6 @@ type dockerProxyRepos struct {
 	DockerProxy struct {
 		//[ HUB, REGISTRY, CUSTOM ]
 		IndexType string `json:"indexType"`
-		IndexUrl  string `json:"indexUrl"`
+		IndexUrl  string `json:"indexUrl,omitempty"`
 	} `json:"dockerProxy"`
 }

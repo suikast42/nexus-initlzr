@@ -16,6 +16,14 @@
       "url": "https://registry-1.docker.io",
       "username": "suikast42",
       "password":  "EmirKaan19082014"
+    },
+    {
+      "name": "dockerElastic",
+      "url": "https://docker.elastic.co"
+    },
+    {
+      "name": "dockerQuay",
+      "url": "https://quay.io"
     }
   ]
 }
