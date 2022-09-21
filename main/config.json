@@ -1,0 +1,13 @@
+{
+  "address": "nexus.cloud.private",
+  "port": 443,
+  "password": "cloudmaster",
+  "blobStores": [
+    {
+      "name": "docker"
+    },
+    {
+      "name": "maven"
+    }
+  ]
+}
