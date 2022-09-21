@@ -239,16 +239,16 @@ func newBlobStoreRequest(name string, space int) blobStoreRequest {
 }
 
 func (r *ClientConfig) AddDockerRepos(realmsRequest []string) error {
-	repo, err := r.getOrCreateDockerLocalRepo(false)
+	pushRepo, err := r.getOrCreateDockerLocalRepo(false)
 	if err != nil {
 		return err
 	}
-	logger.Info(fmt.Sprintf("Repo docker local is there %s", repo.Name))
-	//repo, err := r.getOrCreateDockerGroupRepo(false)
-	//if err != nil {
-	//	return err
-	//}
-
+	logger.Info(fmt.Sprintf("Repo docker pushRepo is there %s", pushRepo.Name))
+	pullRepo, err := r.getOrCreateDockerGroupRepo(false)
+	if err != nil {
+		return err
+	}
+	logger.Info(fmt.Sprintf("Repo docker pullRepo is there %s", pullRepo.Name))
 	return nil
 }
 
@@ -438,7 +438,7 @@ func newDockerLocalRepo() dockerLocalRepo {
 		}{
 			V1Enabled:      false,
 			ForceBasicAuth: false,
-			HttpPort:       5000,
+			HttpPort:       5001,
 		},
 	}
 }
@@ -468,7 +468,7 @@ type dockerLocalRepo struct {
 
 func newDockerGroupRepo() dockerGroupRepo {
 	return dockerGroupRepo{
-		Name:   "dockerGroupRepo",
+		Name:   "dockerGroup",
 		Online: true,
 		Storage: struct {
 			BlobStoreName               string `json:"blobStoreName"`
@@ -480,7 +480,9 @@ func newDockerGroupRepo() dockerGroupRepo {
 		Group: struct {
 			MemberNames    []string `json:"memberNames"`
 			WritableMember string   `json:"writableMember"`
-		}{},
+		}{
+			MemberNames: []string{"dockerLocal"},
+		},
 		Docker: struct {
 			V1Enabled      bool   `json:"v1Enabled"`
 			ForceBasicAuth bool   `json:"forceBasicAuth"`
