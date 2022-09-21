@@ -645,14 +645,14 @@ func newDockerProxyRepos(name string, url string, username string, password stri
 		HttpClient: struct {
 			Blocked    bool `json:"blocked"`
 			AutoBlock  bool `json:"autoBlock"`
-			Connection struct {
+			Connection *struct {
 				Retries                 int    `json:"retries"`
 				UserAgentSuffix         string `json:"userAgentSuffix"`
 				Timeout                 int    `json:"timeout"`
 				EnableCircularRedirects bool   `json:"enableCircularRedirects"`
 				EnableCookies           bool   `json:"enableCookies"`
 				UseTrustStore           bool   `json:"useTrustStore"`
-			} `json:"connection"`
+			} `json:"connection,omitempty"`
 			Authentication struct {
 				Type       string `json:"type"`
 				Username   string `json:"username"`
@@ -663,14 +663,6 @@ func newDockerProxyRepos(name string, url string, username string, password stri
 		}{
 			Blocked:   false,
 			AutoBlock: false,
-			Connection: struct {
-				Retries                 int    `json:"retries"`
-				UserAgentSuffix         string `json:"userAgentSuffix"`
-				Timeout                 int    `json:"timeout"`
-				EnableCircularRedirects bool   `json:"enableCircularRedirects"`
-				EnableCookies           bool   `json:"enableCookies"`
-				UseTrustStore           bool   `json:"useTrustStore"`
-			}{Timeout: 20},
 		},
 
 		DockerProxy: struct {
@@ -728,14 +720,14 @@ type dockerProxyRepos struct {
 	HttpClient struct {
 		Blocked    bool `json:"blocked"`
 		AutoBlock  bool `json:"autoBlock"`
-		Connection struct {
+		Connection *struct {
 			Retries                 int    `json:"retries"`
 			UserAgentSuffix         string `json:"userAgentSuffix"`
 			Timeout                 int    `json:"timeout"`
 			EnableCircularRedirects bool   `json:"enableCircularRedirects"`
 			EnableCookies           bool   `json:"enableCookies"`
 			UseTrustStore           bool   `json:"useTrustStore"`
-		} `json:"connection"`
+		} `json:"connection,omitempty"`
 		Authentication struct {
 			//username, ntlm
 			Type       string `json:"type"`
