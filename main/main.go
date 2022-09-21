@@ -13,7 +13,6 @@ import (
 var logger, _ = zap.NewProduction()
 
 func main() {
-
 	err := readConfig()
 	if err != nil {
 		panic(err)
@@ -39,7 +38,10 @@ func main() {
 	}
 	logger.Info(fmt.Sprintf("nexus.address: %s", nexusClient.Address))
 	logger.Info(fmt.Sprintf("nexus.port: %d", nexusClient.Port))
-
+	err = nexusClient.WaitForUp()
+	if err != nil {
+		panic(err)
+	}
 	err = nexusClient.ChangeAdmin123Password()
 	if err != nil {
 		panic(err)
@@ -65,7 +67,7 @@ func main() {
 
 func readConfig() error {
 	viper.SetConfigType("json") // Look for specific type
-	{                           //initialize local cfg
+	{ //initialize local cfg
 		viper.AddConfigPath("./")
 		viper.SetConfigName("config") // Register config file name (no extension)
 		err := viper.ReadInConfig()

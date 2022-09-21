@@ -1,2 +1,3 @@
-docker build .  -t suikast42/nexus-initlzr:1.0.0.Alpha1
-docker push suikast42/nexus-initlzr:1.0.0.Alpha1
+$Version=1.0.0.Alpha2
+docker build .  -t suikast42/nexus-initlzr:$Version
+docker push suikast42/nexus-initlzr:$Version

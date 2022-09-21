@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 	"io"
 	"net/http"
+	"time"
 )
 
 var logger, _ = zap.NewProduction()
@@ -30,6 +31,27 @@ func (m NexusError) Error() string {
 
 func (r *ClientConfig) baseUrl() string {
 	return fmt.Sprintf("https://%s:%d/service/rest/v1/", r.Address, r.Port)
+}
+func (r *ClientConfig) WaitForUp() error {
+	url := fmt.Sprintf(r.baseUrl() + "status")
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+	response, err := r.Client.Do(request)
+	if err != nil {
+		return err
+	}
+	for response.StatusCode != http.StatusOK {
+		logger.Info(fmt.Sprintf("Waiting for nexus. Statuscode %d", response.StatusCode))
+		time.Sleep(2 * time.Second)
+		response, err = r.Client.Do(request)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (r *ClientConfig) ChangeAdmin123Password() error {
