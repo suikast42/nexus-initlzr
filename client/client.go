@@ -238,56 +238,281 @@ func newBlobStoreRequest(name string, space int) blobStoreRequest {
 	}
 }
 
-type repoDockerProxy struct {
+func (r *ClientConfig) AddDockerRepos(realmsRequest []string) error {
+	repo, err := r.getOrCreateDockerLocalRepo(false)
+	if err != nil {
+		return err
+	}
+	logger.Info(fmt.Sprintf("Repo docker local is there %s", repo.Name))
+	//repo, err := r.getOrCreateDockerGroupRepo(false)
+	//if err != nil {
+	//	return err
+	//}
+
+	return nil
+}
+
+func (r *ClientConfig) getOrCreateDockerLocalRepo(secondCall bool) (*dockerLocalRepo, error) {
+	var dockerLocalRepo *dockerLocalRepo
+	{ // Determine the active realms
+		url := fmt.Sprintf(r.baseUrl() + "repositories/docker/hosted/dockerLocal")
+		request, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return nil, err
+		}
+		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("accept", "application/json")
+		request.SetBasicAuth("admin", r.Password)
+		response, err := r.Client.Do(request)
+		if err != nil {
+			return nil, err
+		}
+		// Close request body anyway
+		defer func() {
+			_ = response.Body.Close()
+		}()
+
+		switch status := response.StatusCode; status {
+		case http.StatusOK:
+			{
+				content, err := io.ReadAll(response.Body)
+				if err != nil {
+					return nil, err
+				}
+				err = json.Unmarshal(content, &dockerLocalRepo)
+				if err != nil {
+					return nil, err
+				}
+			}
+		case http.StatusNotFound:
+			{
+				if secondCall {
+					return nil, NexusError{
+						message:    "´Can't create dockerLocal repo ",
+						statuscode: status,
+					}
+				}
+				url := fmt.Sprintf(r.baseUrl() + "repositories/docker/hosted")
+				dockerLocalRepo := newDockerLocalRepo()
+				b, err := json.Marshal(dockerLocalRepo)
+				if err != nil {
+					return nil, err
+				}
+				request, err := http.NewRequest("POST", url, bytes.NewBuffer(b))
+				if err != nil {
+					return nil, err
+				}
+				request.Header.Set("Content-Type", "application/json")
+				request.Header.Set("accept", "application/json")
+				request.SetBasicAuth("admin", r.Password)
+				response, err := r.Client.Do(request)
+				if err != nil {
+					return nil, err
+				}
+				defer func() {
+					_ = response.Body.Close()
+				}()
+				switch status := response.StatusCode; status {
+				case http.StatusCreated:
+					return r.getOrCreateDockerLocalRepo(true)
+				default:
+					return nil, NexusError{
+						message:    "Unknown error",
+						statuscode: status,
+					}
+				}
+			}
+		default:
+			return nil, NexusError{
+				message:    "Unknown error",
+				statuscode: status,
+			}
+		}
+
+	}
+
+	return dockerLocalRepo, nil
+}
+func (r *ClientConfig) getOrCreateDockerGroupRepo(secondCall bool) (*dockerGroupRepo, error) {
+	var dockerGroup *dockerGroupRepo
+	{ // Determine the active realms
+		url := fmt.Sprintf(r.baseUrl() + "repositories/docker/group/dockerGroup")
+		request, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return nil, err
+		}
+		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("accept", "application/json")
+		request.SetBasicAuth("admin", r.Password)
+
+		response, err := r.Client.Do(request)
+		if err != nil {
+			return nil, err
+		}
+		// Close request body anyway
+		defer func() {
+			_ = response.Body.Close()
+		}()
+		switch status := response.StatusCode; status {
+		case http.StatusOK:
+			{ // Docker group repo found
+				content, err := io.ReadAll(response.Body)
+				if err != nil {
+					return nil, err
+				}
+				err = json.Unmarshal(content, &dockerGroup)
+				if err != nil {
+					return nil, err
+				}
+			}
+			// Create docker repo
+		case http.StatusNotFound:
+			{
+				if secondCall {
+					return nil, NexusError{
+						message:    "´Can't create dockerGroup repo ",
+						statuscode: status,
+					}
+				}
+				url := fmt.Sprintf(r.baseUrl() + "repositories/docker/group")
+				dockerGroupRepo := newDockerGroupRepo()
+				b, err := json.Marshal(dockerGroupRepo)
+				if err != nil {
+					return nil, err
+				}
+				request, err := http.NewRequest("POST", url, bytes.NewBuffer(b))
+				if err != nil {
+					return nil, err
+				}
+				request.Header.Set("Content-Type", "application/json")
+				request.Header.Set("accept", "application/json")
+				request.SetBasicAuth("admin", r.Password)
+				response, err := r.Client.Do(request)
+				if err != nil {
+					return nil, err
+				}
+				defer func() {
+					_ = response.Body.Close()
+				}()
+				switch status := response.StatusCode; status {
+				case http.StatusCreated:
+					return r.getOrCreateDockerGroupRepo(true)
+				default:
+					return nil, NexusError{
+						message:    "Unknown error",
+						statuscode: status,
+					}
+				}
+
+			}
+		default:
+			return nil, NexusError{
+				message:    "Unknown error",
+				statuscode: status,
+			}
+		}
+
+	}
+
+	return dockerGroup, nil
+}
+func newDockerLocalRepo() dockerLocalRepo {
+	return dockerLocalRepo{
+		Name:   "dockerLocal",
+		Online: true,
+		Storage: struct {
+			BlobStoreName               string `json:"blobStoreName"`
+			StrictContentTypeValidation bool   `json:"strictContentTypeValidation"`
+			WritePolicy                 string `json:"writePolicy"`
+		}{
+			BlobStoreName:               "docker",
+			StrictContentTypeValidation: false,
+			WritePolicy:                 "allow",
+		},
+		Docker: struct {
+			V1Enabled      bool   `json:"v1Enabled"`
+			ForceBasicAuth bool   `json:"forceBasicAuth"`
+			HttpPort       int    `json:"httpPort"`
+			HttpsPort      int    `json:"httpsPort,omitempty"`
+			Subdomain      string `json:"subdomain,omitempty"`
+		}{
+			V1Enabled:      false,
+			ForceBasicAuth: false,
+			HttpPort:       5000,
+		},
+	}
+}
+
+type dockerLocalRepo struct {
 	Name    string `json:"name"`
 	Online  bool   `json:"online"`
-	Storage *struct {
+	Storage struct {
 		BlobStoreName               string `json:"blobStoreName"`
 		StrictContentTypeValidation bool   `json:"strictContentTypeValidation"`
+		WritePolicy                 string `json:"writePolicy"`
 	} `json:"storage"`
 	Cleanup *struct {
 		PolicyNames []string `json:"policyNames"`
 	} `json:"cleanup"`
-	Proxy struct {
-		RemoteUrl      string `json:"remoteUrl"`
-		ContentMaxAge  int    `json:"contentMaxAge"`
-		MetadataMaxAge int    `json:"metadataMaxAge"`
-	} `json:"proxy"`
-	NegativeCache *struct {
-		Enabled    bool `json:"enabled"`
-		TimeToLive int  `json:"timeToLive"`
-	} `json:"negativeCache"`
-	HttpClient struct {
-		Blocked    bool `json:"blocked"`
-		AutoBlock  bool `json:"autoBlock"`
-		Connection struct {
-			Retries                 int    `json:"retries"`
-			UserAgentSuffix         string `json:"userAgentSuffix"`
-			Timeout                 int    `json:"timeout"`
-			EnableCircularRedirects bool   `json:"enableCircularRedirects"`
-			EnableCookies           bool   `json:"enableCookies"`
-			UseTrustStore           bool   `json:"useTrustStore"`
-		} `json:"connection"`
-		Authentication struct {
-			Type       string `json:"type"`
-			Username   string `json:"username"`
-			Password   string `json:"password"`
-			NtlmHost   string `json:"ntlmHost"`
-			NtlmDomain string `json:"ntlmDomain"`
-		} `json:"authentication"`
-	} `json:"httpClient"`
-	RoutingRule string `json:"routingRule"`
-	Replication struct {
-	} `json:"replication"`
+	Component struct {
+		ProprietaryComponents bool `json:"proprietaryComponents"`
+	} `json:"component,omitempty"`
 	Docker struct {
 		V1Enabled      bool   `json:"v1Enabled"`
 		ForceBasicAuth bool   `json:"forceBasicAuth"`
 		HttpPort       int    `json:"httpPort"`
-		HttpsPort      int    `json:"httpsPort"`
-		Subdomain      string `json:"subdomain"`
+		HttpsPort      int    `json:"httpsPort,omitempty"`
+		Subdomain      string `json:"subdomain,omitempty"`
 	} `json:"docker"`
-	DockerProxy struct {
-		IndexType string `json:"indexType"`
-		IndexUrl  string `json:"indexUrl"`
-	} `json:"dockerProxy"`
+}
+
+func newDockerGroupRepo() dockerGroupRepo {
+	return dockerGroupRepo{
+		Name:   "dockerGroupRepo",
+		Online: true,
+		Storage: struct {
+			BlobStoreName               string `json:"blobStoreName"`
+			StrictContentTypeValidation bool   `json:"strictContentTypeValidation"`
+		}{
+			BlobStoreName:               "docker",
+			StrictContentTypeValidation: true,
+		},
+		Group: struct {
+			MemberNames    []string `json:"memberNames"`
+			WritableMember string   `json:"writableMember"`
+		}{},
+		Docker: struct {
+			V1Enabled      bool   `json:"v1Enabled"`
+			ForceBasicAuth bool   `json:"forceBasicAuth"`
+			HttpPort       int    `json:"httpPort"`
+			HttpsPort      int    `json:"httpsPort,omitempty"`
+			Subdomain      string `json:"subdomain,omitempty"`
+		}{
+			V1Enabled:      false,
+			ForceBasicAuth: false,
+			HttpPort:       5000,
+			HttpsPort:      0,
+			Subdomain:      "",
+		},
+	}
+}
+
+type dockerGroupRepo struct {
+	Name    string `json:"name"`
+	Online  bool   `json:"online"`
+	Storage struct {
+		BlobStoreName               string `json:"blobStoreName"`
+		StrictContentTypeValidation bool   `json:"strictContentTypeValidation"`
+	} `json:"storage"`
+	Group struct {
+		MemberNames    []string `json:"memberNames"`
+		WritableMember string   `json:"writableMember"`
+	} `json:"group"`
+	Docker struct {
+		V1Enabled      bool   `json:"v1Enabled"`
+		ForceBasicAuth bool   `json:"forceBasicAuth"`
+		HttpPort       int    `json:"httpPort"`
+		HttpsPort      int    `json:"httpsPort,omitempty"`
+		Subdomain      string `json:"subdomain,omitempty"`
+	} `json:"docker"`
 }

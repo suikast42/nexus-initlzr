@@ -56,6 +56,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	err = nexusClient.AddDockerRepos(realms)
+	if err != nil {
+		panic(err)
+	}
 }
 
 type NexusConfig struct {
@@ -66,6 +71,8 @@ type NexusConfig struct {
 		Name     string `json:"name"`
 		Capacity int    `json:"capacity"`
 	} `json:"blobStores"`
+	DockerGroup []struct {
+	}
 }
 
 func readConfig() error {

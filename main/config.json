@@ -9,5 +9,8 @@
     {
       "name": "maven"
     }
+  ],
+  "dockerGroup": [
+
   ]
 }
