@@ -680,10 +680,12 @@ func newDockerProxyRepos(name string, url string, username string, password stri
 		Docker: struct {
 			V1Enabled      bool   `json:"v1Enabled"`
 			ForceBasicAuth bool   `json:"forceBasicAuth"`
-			HttpPort       int    `json:"httpPort"`
-			HttpsPort      int    `json:"httpsPort"`
-			Subdomain      string `json:"subdomain"`
-		}{V1Enabled: false, ForceBasicAuth: false, HttpPort: 8500, HttpsPort: 8501},
+			HttpPort       int    `json:"httpPort,omitempty"`
+			HttpsPort      int    `json:"httpsPort,omitempty"`
+			Subdomain      string `json:"subdomain,omitempty"`
+		}{V1Enabled: false, ForceBasicAuth: false},
+
+		//{V1Enabled: false, ForceBasicAuth: false, HttpPort: 8500, HttpsPort: 8501},
 	}
 
 	if "dockerHub" == name {
@@ -699,6 +701,8 @@ func newDockerProxyRepos(name string, url string, username string, password stri
 	if len(password) > 0 {
 		repo.HttpClient.Authentication.Password = password
 	}
+	marshal, _ := json.Marshal(repo)
+	fmt.Printf("%+v\n", string(marshal))
 	return repo
 }
 
@@ -749,9 +753,9 @@ type dockerProxyRepos struct {
 	Docker struct {
 		V1Enabled      bool   `json:"v1Enabled"`
 		ForceBasicAuth bool   `json:"forceBasicAuth"`
-		HttpPort       int    `json:"httpPort"`
-		HttpsPort      int    `json:"httpsPort"`
-		Subdomain      string `json:"subdomain"`
+		HttpPort       int    `json:"httpPort,omitempty"`
+		HttpsPort      int    `json:"httpsPort,omitempty"`
+		Subdomain      string `json:"subdomain,omitempty"`
 	} `json:"docker,omitempty"`
 	DockerProxy struct {
 		//[ HUB, REGISTRY, CUSTOM ]
