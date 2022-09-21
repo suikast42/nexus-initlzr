@@ -261,7 +261,11 @@ func (r *ClientConfig) AddDockerRepos(repos []DockerGroup) error {
 		members := koazee.StreamOf(pullRepo.Group.MemberNames)
 		contains, _ := members.Contains(repoReq.Name)
 		if !contains {
-			logger.Error("Pull repo does not contain repo . Implement this")
+			pullRepo.Group.MemberNames = append(pullRepo.Group.MemberNames, repoReq.Name)
+			err := r.updateDockerGroupRepo(pullRepo)
+			if err != nil {
+				return err
+			}
 		}
 
 	}
@@ -433,6 +437,42 @@ func (r *ClientConfig) getOrCreateDockerGroupRepo(secondCall bool) (*dockerGroup
 	}
 
 	return dockerGroup, nil
+}
+
+func (r *ClientConfig) updateDockerGroupRepo(repo *dockerGroupRepo) error {
+	url := fmt.Sprintf(r.baseUrl() + fmt.Sprintf("repositories/docker/group/%s", repo.Name))
+	b, err := json.Marshal(repo)
+	if err != nil {
+		return err
+	}
+	request, err := http.NewRequest("PUT", url, bytes.NewBuffer(b))
+	if err != nil {
+		return err
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("accept", "application/json")
+	request.SetBasicAuth("admin", r.Password)
+
+	response, err := r.Client.Do(request)
+	if err != nil {
+		return err
+	}
+	switch status := response.StatusCode; status {
+	case http.StatusOK, http.StatusCreated, http.StatusNoContent:
+		{
+			logger.Info(fmt.Sprintf("Member added to %s", repo.Name))
+		}
+	default:
+		{
+			return NexusError{
+				message:    "Unknown error",
+				statuscode: status,
+			}
+		}
+
+	}
+
+	return nil
 }
 func newDockerLocalRepo() dockerLocalRepo {
 	return dockerLocalRepo{
