@@ -22,6 +22,10 @@
     {
       "name": "dockerQuay",
       "url": "https://quay.io"
+    },
+    {
+      "name": "dockerGcr",
+      "url": "https://gcr.io"
     }
   ]
 }
