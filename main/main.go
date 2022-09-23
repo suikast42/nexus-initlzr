@@ -67,7 +67,7 @@ func main() {
 
 func readConfig() error {
 	viper.SetConfigType("json") // Look for specific type
-	{ //initialize local cfg
+	{                           //initialize local cfg
 		viper.AddConfigPath("./")
 		viper.SetConfigName("config") // Register config file name (no extension)
 		err := viper.ReadInConfig()
