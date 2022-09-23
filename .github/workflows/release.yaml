@@ -5,10 +5,10 @@ jobs:
     name: release linux/386
     runs-on: ubuntu-latest
     steps:
-      - run: go mod tidy
       - uses: actions/checkout@master
       - name: compile and release
         uses: ngs/go-release.action@v1.0.1
+        run: go mod tidy
         env:
           GO111MODULE: "on"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -19,10 +19,10 @@ jobs:
     name: release linux/amd64
     runs-on: ubuntu-latest
     steps:
-      - run: go mod tidy
       - uses: actions/checkout@master
       - name: compile and release
         uses: ngs/go-release.action@v1.0.1
+        run: go mod tidy
         env:
           GO111MODULE: "on"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
