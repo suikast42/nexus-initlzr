@@ -7,8 +7,7 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: compile and release
-        uses: ngs/go-release.action@v1.0.1
-        run: go mod tidy
+        uses: ngs/go-release.action@v1.19.1
         env:
           GO111MODULE: "on"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -21,8 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: compile and release
-        uses: ngs/go-release.action@v1.0.1
-        run: go mod tidy
+        uses: ngs/go-release.action@v1.19.1
         env:
           GO111MODULE: "on"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -33,10 +31,9 @@ jobs:
     name: release linux/386
     runs-on: ubuntu-latest
     steps:
-      - run: go mod tidy
       - uses: actions/checkout@master
       - name: compile and release
-        uses: ngs/go-release.action@v1.0.1
+        uses: ngs/go-release.action@v1.19.1
         env:
           GO111MODULE: "on"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -47,10 +44,9 @@ jobs:
     name: release linux/amd64
     runs-on: ubuntu-latest
     steps:
-      - run: go mod tidy
       - uses: actions/checkout@master
       - name: compile and release
-        uses: ngs/go-release.action@v1.0.1
+        uses: ngs/go-release.action@v1.19.1
         env:
           GO111MODULE: "on"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -61,10 +57,9 @@ jobs:
     name: release darwin/amd64
     runs-on: ubuntu-latest
     steps:
-      - run: go mod tidy
       - uses: actions/checkout@master
       - name: compile and release
-        uses: ngs/go-release.action@v1.0.1
+        uses: ngs/go-release.action@v1.19.1
         env:
           GO111MODULE: "on"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -75,10 +70,9 @@ jobs:
     name: release windows/386
     runs-on: ubuntu-latest
     steps:
-      - run: go mod tidy
       - uses: actions/checkout@master
       - name: compile and release
-        uses: ngs/go-release.action@v1.0.1
+        uses: ngs/go-release.action@v1.19.1
         env:
           GO111MODULE: "on"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -89,10 +83,9 @@ jobs:
     name: release windows/amd64
     runs-on: ubuntu-latest
     steps:
-      - run: go mod tidy
       - uses: actions/checkout@master
       - name: compile and release
-        uses: ngs/go-release.action@v1.0.1
+        uses: ngs/go-release.action@v1.19.1
         env:
           GO111MODULE: "on"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
