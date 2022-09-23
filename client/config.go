@@ -4,6 +4,7 @@ type NexusConfig struct {
 	Address    string `json:"address"`
 	Port       int    `json:"port"`
 	Password   string `json:"password"`
+	Scheme     string `json:"scheme"`
 	BlobStores []struct {
 		Name     string `json:"name"`
 		Capacity int    `json:"capacity"`

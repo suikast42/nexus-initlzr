@@ -13,6 +13,8 @@ import (
 var logger, _ = zap.NewProduction()
 
 func main() {
+	viper.SetEnvPrefix("NEXUS")
+	viper.AutomaticEnv()
 	err := readConfig()
 	if err != nil {
 		panic(err)
@@ -28,6 +30,7 @@ func main() {
 		Address:  nexusConfig.Address,
 		Port:     nexusConfig.Port,
 		Password: nexusConfig.Password,
+		Scheme:   nexusConfig.Scheme,
 		Client: &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{

@@ -1,5 +1,6 @@
 {
   "address": "nexus.cloud.private",
+  "scheme": "https",
   "port": 443,
   "password": "cloudmaster",
   "blobStores": [

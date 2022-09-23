@@ -17,6 +17,7 @@ type ClientConfig struct {
 	Address  string
 	Port     int
 	Password string
+	Scheme   string
 	Client   *http.Client
 }
 
@@ -30,7 +31,7 @@ func (m NexusError) Error() string {
 }
 
 func (r *ClientConfig) baseUrl() string {
-	return fmt.Sprintf("https://%s:%d/service/rest/v1/", r.Address, r.Port)
+	return fmt.Sprintf("%s://%s:%d/service/rest/v1/", r.Scheme, r.Address, r.Port)
 }
 func (r *ClientConfig) WaitForUp() error {
 	url := fmt.Sprintf(r.baseUrl() + "status")
@@ -39,9 +40,12 @@ func (r *ClientConfig) WaitForUp() error {
 		return err
 	}
 	response, err := r.Client.Do(request)
-	if err != nil {
-		return err
+	for err != nil {
+		logger.Error(fmt.Sprintf("Waiting for nexus. %s", err))
+		time.Sleep(2 * time.Second)
+		response, err = r.Client.Do(request)
 	}
+
 	for response.StatusCode != http.StatusOK {
 		logger.Info(fmt.Sprintf("Waiting for nexus. Statuscode %d", response.StatusCode))
 		time.Sleep(2 * time.Second)
