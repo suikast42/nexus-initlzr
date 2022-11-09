@@ -264,14 +264,14 @@ func newBlobStoreRequest(name string, space int) blobStoreRequest {
 	}
 }
 
-func (r *ClientConfig) AddDockerRepos(repos []DockerGroup) error {
-	pushRepo, err := r.getOrCreateDockerLocalRepo(false)
+func (r *ClientConfig) AddDockerRepos(config *NexusConfig, repos []DockerGroup) error {
+	pushRepo, err := r.getOrCreateDockerLocalRepo(config, false)
 	if err != nil {
 		return err
 	}
 	logger.Info(fmt.Sprintf("Repo docker pushRepo is there %s", pushRepo.Name))
 
-	pullRepo, err := r.getOrCreateDockerGroupRepo(false)
+	pullRepo, err := r.getOrCreateDockerGroupRepo(config, false)
 	if err != nil {
 		return err
 	}
@@ -300,7 +300,7 @@ func (r *ClientConfig) AddDockerRepos(repos []DockerGroup) error {
 	return nil
 }
 
-func (r *ClientConfig) getOrCreateDockerLocalRepo(secondCall bool) (*dockerLocalRepo, error) {
+func (r *ClientConfig) getOrCreateDockerLocalRepo(config *NexusConfig, secondCall bool) (*dockerLocalRepo, error) {
 	var dockerLocalRepo *dockerLocalRepo
 	{ // Determine the active realms
 		url := fmt.Sprintf(r.baseUrl() + "repositories/docker/hosted/dockerLocal")
@@ -341,7 +341,7 @@ func (r *ClientConfig) getOrCreateDockerLocalRepo(secondCall bool) (*dockerLocal
 					}
 				}
 				url := fmt.Sprintf(r.baseUrl() + "repositories/docker/hosted")
-				dockerLocalRepo := newDockerLocalRepo()
+				dockerLocalRepo := newDockerLocalRepo(config)
 				b, err := json.Marshal(dockerLocalRepo)
 				if err != nil {
 					return nil, err
@@ -362,7 +362,7 @@ func (r *ClientConfig) getOrCreateDockerLocalRepo(secondCall bool) (*dockerLocal
 				}()
 				switch status := response.StatusCode; status {
 				case http.StatusCreated:
-					return r.getOrCreateDockerLocalRepo(true)
+					return r.getOrCreateDockerLocalRepo(config, true)
 				default:
 					return nil, NexusError{
 						message:    "Unknown error",
@@ -381,7 +381,7 @@ func (r *ClientConfig) getOrCreateDockerLocalRepo(secondCall bool) (*dockerLocal
 
 	return dockerLocalRepo, nil
 }
-func (r *ClientConfig) getOrCreateDockerGroupRepo(secondCall bool) (*dockerGroupRepo, error) {
+func (r *ClientConfig) getOrCreateDockerGroupRepo(config *NexusConfig, secondCall bool) (*dockerGroupRepo, error) {
 	var dockerGroup *dockerGroupRepo
 	{
 		url := fmt.Sprintf(r.baseUrl() + "repositories/docker/group/dockerGroup")
@@ -423,7 +423,7 @@ func (r *ClientConfig) getOrCreateDockerGroupRepo(secondCall bool) (*dockerGroup
 					}
 				}
 				url := fmt.Sprintf(r.baseUrl() + "repositories/docker/group")
-				dockerGroupRepo := newDockerGroupRepo()
+				dockerGroupRepo := newDockerGroupRepo(config)
 				b, err := json.Marshal(dockerGroupRepo)
 				if err != nil {
 					return nil, err
@@ -444,7 +444,7 @@ func (r *ClientConfig) getOrCreateDockerGroupRepo(secondCall bool) (*dockerGroup
 				}()
 				switch status := response.StatusCode; status {
 				case http.StatusCreated:
-					return r.getOrCreateDockerGroupRepo(true)
+					return r.getOrCreateDockerGroupRepo(config, true)
 				default:
 					return nil, NexusError{
 						message:    "Unknown error",
@@ -500,7 +500,7 @@ func (r *ClientConfig) updateDockerGroupRepo(repo *dockerGroupRepo) error {
 
 	return nil
 }
-func newDockerLocalRepo() dockerLocalRepo {
+func newDockerLocalRepo(config *NexusConfig) dockerLocalRepo {
 	return dockerLocalRepo{
 		Name:   "dockerLocal",
 		Online: true,
@@ -522,7 +522,7 @@ func newDockerLocalRepo() dockerLocalRepo {
 		}{
 			V1Enabled:      false,
 			ForceBasicAuth: false,
-			HttpPort:       5001,
+			HttpPort:       config.DockerPush.Port,
 		},
 	}
 }
@@ -631,7 +631,7 @@ type dockerLocalRepo struct {
 	} `json:"docker"`
 }
 
-func newDockerGroupRepo() dockerGroupRepo {
+func newDockerGroupRepo(config *NexusConfig) dockerGroupRepo {
 	return dockerGroupRepo{
 		Name:   "dockerGroup",
 		Online: true,
@@ -657,7 +657,7 @@ func newDockerGroupRepo() dockerGroupRepo {
 		}{
 			V1Enabled:      false,
 			ForceBasicAuth: false,
-			HttpPort:       5000,
+			HttpPort:       config.DockerPull.Port,
 			HttpsPort:      0,
 			Subdomain:      "",
 		},

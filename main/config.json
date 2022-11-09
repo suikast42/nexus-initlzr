@@ -11,6 +11,12 @@
       "name": "maven"
     }
   ],
+  "dockerPush": {
+    "port": 5001
+  },
+  "dockerPull": {
+    "port": 5000
+  },
   "dockerGroup": [
     {
       "name": "dockerHub",

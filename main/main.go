@@ -62,7 +62,7 @@ func main() {
 		panic(err)
 	}
 
-	err = nexusClient.AddDockerRepos(nexusConfig.DockerGroup)
+	err = nexusClient.AddDockerRepos(&nexusConfig, nexusConfig.DockerGroup)
 	if err != nil {
 		panic(err)
 	}
@@ -79,6 +79,7 @@ func readConfig() error {
 		}
 	}
 	{
+		//NEXUS_INIT_CONFIG_PATH=C:\IDE\Projects_Git\playground\nexus-initlzr\main\override_config.json
 		cfg, present := os.LookupEnv("NEXUS_INIT_CONFIG_PATH")
 		if present {
 			viper.AddConfigPath(cfg)

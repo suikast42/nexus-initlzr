@@ -10,6 +10,12 @@ type NexusConfig struct {
 		Capacity int    `json:"capacity"`
 	} `json:"blobStores"`
 	DockerGroup []DockerGroup
+	DockerPush  struct {
+		Port int `json:"port"`
+	} `json:"dockerPush"`
+	DockerPull struct {
+		Port int `json:"port"`
+	} `json:"dockerPull"`
 }
 
 type DockerGroup struct {
