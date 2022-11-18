@@ -66,6 +66,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	err = nexusClient.CreateRawRepo(&nexusConfig)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func readConfig() error {

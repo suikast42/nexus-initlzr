@@ -8,9 +8,21 @@
       "name": "docker"
     },
     {
+      "name": "raw"
+    },
+    {
       "name": "maven"
     }
   ],
+  "rawRepo": {
+    "name": "raw",
+    "online": true,
+    "storage": {
+      "blobStoreName": "raw",
+      "strictContentTypeValidation": true,
+      "writePolicy": "allow"
+    }
+  },
   "dockerPush": {
     "port": 5001
   },

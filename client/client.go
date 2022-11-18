@@ -378,9 +378,9 @@ func (r *ClientConfig) getOrCreateDockerLocalRepo(config *NexusConfig, secondCal
 		}
 
 	}
-
 	return dockerLocalRepo, nil
 }
+
 func (r *ClientConfig) getOrCreateDockerGroupRepo(config *NexusConfig, secondCall bool) (*dockerGroupRepo, error) {
 	var dockerGroup *dockerGroupRepo
 	{
@@ -608,6 +608,97 @@ func (r *ClientConfig) getOrCreateProxyRepo(secondCall bool, repo DockerGroup) (
 	return dockerLocalRepo, nil
 }
 
+func (r *ClientConfig) CreateRawRepo(c *NexusConfig) error {
+	rawRepo, err := r.getOrCreateRawRepo(c, false)
+	if err != nil {
+		return err
+	}
+	logger.Info(fmt.Sprintf("Repo raw is there %s", rawRepo.Name))
+
+	return nil
+}
+
+func (r *ClientConfig) getOrCreateRawRepo(c *NexusConfig, secondCall bool) (*rawRepo, error) {
+	var rawRepo *rawRepo
+	{
+		url := fmt.Sprintf(r.baseUrl() + fmt.Sprintf("repositories/raw/hosted/%s", c.RawRepo.Name))
+		request, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return nil, err
+		}
+		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("accept", "application/json")
+		request.SetBasicAuth("admin", r.Password)
+
+		response, err := r.Client.Do(request)
+		if err != nil {
+			return nil, err
+		}
+		// Close request body anyway
+		defer func() {
+			_ = response.Body.Close()
+		}()
+		switch status := response.StatusCode; status {
+		case http.StatusOK:
+			{ // Docker group repo found
+				content, err := io.ReadAll(response.Body)
+				if err != nil {
+					return nil, err
+				}
+				err = json.Unmarshal(content, &rawRepo)
+				if err != nil {
+					return nil, err
+				}
+			}
+			// Create docker repo
+		case http.StatusNotFound:
+			{
+				if secondCall {
+					return nil, NexusError{
+						message:    fmt.Sprintf("Can't create repo %s", c.RawRepo.Name),
+						statuscode: status,
+					}
+				}
+				url := fmt.Sprintf(r.baseUrl() + "repositories/raw/hosted")
+				b, err := json.Marshal(c.RawRepo)
+				if err != nil {
+					return nil, err
+				}
+				request, err := http.NewRequest("POST", url, bytes.NewBuffer(b))
+				if err != nil {
+					return nil, err
+				}
+				request.Header.Set("Content-Type", "application/json")
+				request.Header.Set("accept", "application/json")
+				request.SetBasicAuth("admin", r.Password)
+				response, err := r.Client.Do(request)
+				if err != nil {
+					return nil, err
+				}
+				defer func() {
+					_ = response.Body.Close()
+				}()
+				switch status := response.StatusCode; status {
+				case http.StatusCreated:
+					return r.getOrCreateRawRepo(c, true)
+				default:
+					return nil, NexusError{
+						message:    "Unknown error",
+						statuscode: status,
+					}
+				}
+
+			}
+		default:
+			return nil, NexusError{
+				message:    "Unknown error",
+				statuscode: status,
+			}
+		}
+	}
+	return rawRepo, nil
+}
+
 type dockerLocalRepo struct {
 	Name    string `json:"name"`
 	Online  bool   `json:"online"`
@@ -629,6 +720,26 @@ type dockerLocalRepo struct {
 		HttpsPort      int    `json:"httpsPort,omitempty"`
 		Subdomain      string `json:"subdomain,omitempty"`
 	} `json:"docker"`
+}
+
+type rawRepo struct {
+	Name    string `json:"name"`
+	Url     string `json:"url"`
+	Online  bool   `json:"online"`
+	Storage struct {
+		BlobStoreName               string `json:"blobStoreName"`
+		StrictContentTypeValidation bool   `json:"strictContentTypeValidation"`
+		WritePolicy                 string `json:"writePolicy"`
+	} `json:"storage"`
+	Cleanup   interface{} `json:"cleanup"`
+	Component struct {
+		ProprietaryComponents bool `json:"proprietaryComponents"`
+	} `json:"component"`
+	Raw struct {
+		ContentDisposition string `json:"contentDisposition"`
+	} `json:"raw"`
+	Format string `json:"format"`
+	Type   string `json:"type"`
 }
 
 func newDockerGroupRepo(config *NexusConfig) dockerGroupRepo {
@@ -664,6 +775,9 @@ func newDockerGroupRepo(config *NexusConfig) dockerGroupRepo {
 	}
 }
 
+//region raw repository
+
+// endregion
 type dockerGroupRepo struct {
 	Name    string `json:"name"`
 	Online  bool   `json:"online"`

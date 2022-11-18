@@ -16,6 +16,15 @@ type NexusConfig struct {
 	DockerPull struct {
 		Port int `json:"port"`
 	} `json:"dockerPull"`
+	RawRepo struct {
+		Name    string `json:"name"`
+		Online  bool   `json:"online"`
+		Storage struct {
+			BlobStoreName               string `json:"blobStoreName"`
+			StrictContentTypeValidation bool   `json:"strictContentTypeValidation"`
+			WritePolicy                 string `json:"writePolicy"`
+		} `json:"storage"`
+	}
 }
 
 type DockerGroup struct {
