@@ -840,8 +840,9 @@ func newDockerProxyRepos(name string, url string, username string, password stri
 		},
 
 		DockerProxy: struct {
-			IndexType string `json:"indexType"`
-			IndexUrl  string `json:"indexUrl,omitempty"`
+			IndexType          string `json:"indexType"`
+			IndexUrl           string `json:"indexUrl,omitempty"`
+			CacheForeignLayers bool   `json:"cacheForeignLayers"`
 		}{},
 		Docker: struct {
 			V1Enabled      bool   `json:"v1Enabled"`
@@ -853,7 +854,10 @@ func newDockerProxyRepos(name string, url string, username string, password stri
 
 		//{V1Enabled: false, ForceBasicAuth: false, HttpPort: 8500, HttpsPort: 8501},
 	}
-
+	repo.DockerProxy.CacheForeignLayers = true
+	repo.NegativeCache.Enabled = true
+	repo.NegativeCache.TimeToLive = 1440 // The default 24h
+	repo.HttpClient.AutoBlock = true
 	if "dockerHub" == name {
 		repo.DockerProxy.IndexType = "HUB"
 		repo.DockerProxy.IndexUrl = "https://index.docker.io"
@@ -922,7 +926,8 @@ type dockerProxyRepos struct {
 	} `json:"docker,omitempty"`
 	DockerProxy struct {
 		//[ HUB, REGISTRY, CUSTOM ]
-		IndexType string `json:"indexType"`
-		IndexUrl  string `json:"indexUrl,omitempty"`
+		IndexType          string `json:"indexType"`
+		IndexUrl           string `json:"indexUrl,omitempty"`
+		CacheForeignLayers bool   `json:"cacheForeignLayers"`
 	} `json:"dockerProxy"`
 }
