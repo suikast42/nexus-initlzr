@@ -1,7 +1,7 @@
 #https://docs.docker.com/build/building/multi-stage/
 
 ARG PULL_REGISTRY=docker.io
-FROM $PULL_REGISTRY/golang:1.20.2-alpine AS builder
+FROM $PULL_REGISTRY/golang:1.21.4-alpine AS builder
 
 WORKDIR /nexus-initlzr
 
@@ -18,7 +18,7 @@ GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /out/nexus-initlzr .
 
 
 #Second build layer
-FROM $PULL_REGISTRY/alpine:3.17.2
+FROM $PULL_REGISTRY/alpine:3.18.4
 COPY --from=builder /out/nexus-initlzr /nexus-initlzr
 COPY --from=builder /nexus-initlzr/main/config.json /config.json
 RUN mkdir /cfg

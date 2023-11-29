@@ -854,6 +854,7 @@ func newDockerProxyRepos(name string, url string, username string, password stri
 
 		//{V1Enabled: false, ForceBasicAuth: false, HttpPort: 8500, HttpsPort: 8501},
 	}
+
 	repo.DockerProxy.CacheForeignLayers = true
 	repo.NegativeCache.Enabled = true
 	repo.NegativeCache.TimeToLive = 1440 // The default 24h

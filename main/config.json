@@ -45,6 +45,10 @@
     {
       "name": "dockerGcr",
       "url": "https://gcr.io"
+    },
+    {
+      "name": "dockerMicrosoft",
+      "url": "https://mcr.microsoft.com"
     }
   ]
 }
