@@ -49,6 +49,10 @@
     {
       "name": "dockerMicrosoft",
       "url": "https://mcr.microsoft.com"
+    },
+    {
+      "name": "dockerK8sIo",
+      "url": "https://registry.k8s.io"
     }
   ]
 }
