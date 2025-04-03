@@ -521,7 +521,7 @@ func newDockerLocalRepo(config *NexusConfig) dockerLocalRepo {
 			Subdomain      string `json:"subdomain,omitempty"`
 		}{
 			V1Enabled:      false,
-			ForceBasicAuth: true,
+			ForceBasicAuth: false,
 			HttpPort:       config.DockerPush.Port,
 		},
 	}
