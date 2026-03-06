@@ -1,0 +1,22 @@
+POST http://172.21.1.11:5002/service/rest/v1/repositories/docker/hosted
+Content-Type: application/json
+Authorization: Basic admin cloudmaster
+
+ {
+  "name" : "dockerlocaltest2",
+  "online" : true,
+  "storage" : {
+    "blobStoreName" : "docker",
+    "strictContentTypeValidation" : false,
+    "writePolicy" : "allow"
+  },
+  "cleanup" : null,
+  "component" : {
+    "proprietaryComponents" : false
+  },
+  "docker" : {
+    "v1Enabled" : false,
+    "forceBasicAuth" : false,
+    "httpPort" : 5001
+  }
+}

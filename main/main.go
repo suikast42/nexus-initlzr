@@ -3,11 +3,12 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
+	"net/http"
+	"os"
+
 	"github.com/spf13/viper"
 	"github.com/suikast42/nexus-initlzr/client"
 	"go.uber.org/zap"
-	"net/http"
-	"os"
 )
 
 var logger, _ = zap.NewProduction()
@@ -74,6 +75,11 @@ func main() {
 }
 
 func readConfig() error {
+	//wd, err := os.Getwd()
+	//if err != nil {
+	//	panic(err)
+	//}
+	//fmt.Println("Current path:", wd)
 	viper.SetConfigType("json") // Look for specific type
 	{                           //initialize local cfg
 		viper.AddConfigPath("./")

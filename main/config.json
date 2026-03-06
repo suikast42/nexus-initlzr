@@ -31,27 +31,27 @@
   },
   "dockerGroup": [
     {
-      "name": "dockerHub",
+      "name": "dockerhub",
       "url": "https://registry-1.docker.io"
     },
     {
-      "name": "dockerElastic",
+      "name": "dockerelastic",
       "url": "https://docker.elastic.co"
     },
     {
-      "name": "dockerQuay",
+      "name": "dockerquay",
       "url": "https://quay.io"
     },
     {
-      "name": "dockerGcr",
+      "name": "dockergcr",
       "url": "https://gcr.io"
     },
     {
-      "name": "dockerMicrosoft",
+      "name": "dockermicrosoft",
       "url": "https://mcr.microsoft.com"
     },
     {
-      "name": "dockerK8sIo",
+      "name": "dockerk8sio",
       "url": "https://registry.k8s.io"
     }
   ]
