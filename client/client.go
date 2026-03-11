@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/wesovilabs/koazee"
-	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/wesovilabs/koazee"
+	"go.uber.org/zap"
 )
 
 var logger, _ = zap.NewProduction()
@@ -303,7 +304,7 @@ func (r *ClientConfig) AddDockerRepos(config *NexusConfig, repos []DockerGroup) 
 func (r *ClientConfig) getOrCreateDockerLocalRepo(config *NexusConfig, secondCall bool) (*dockerLocalRepo, error) {
 	var dockerLocalRepo *dockerLocalRepo
 	{ // Determine the active realms
-		url := fmt.Sprintf(r.baseUrl() + "repositories/docker/hosted/dockerLocal")
+		url := fmt.Sprintf(r.baseUrl() + "repositories/docker/hosted/dockerlocal")
 		request, err := http.NewRequest("GET", url, nil)
 		if err != nil {
 			return nil, err
@@ -336,7 +337,7 @@ func (r *ClientConfig) getOrCreateDockerLocalRepo(config *NexusConfig, secondCal
 			{
 				if secondCall {
 					return nil, NexusError{
-						message:    "´Can't create dockerLocal repo ",
+						message:    "´Can't create dockerlocal repo ",
 						statuscode: status,
 					}
 				}
@@ -502,7 +503,7 @@ func (r *ClientConfig) updateDockerGroupRepo(repo *dockerGroupRepo) error {
 }
 func newDockerLocalRepo(config *NexusConfig) dockerLocalRepo {
 	return dockerLocalRepo{
-		Name:   "dockerLocal",
+		Name:   "dockerlocal",
 		Online: true,
 		Storage: struct {
 			BlobStoreName               string `json:"blobStoreName"`
@@ -744,7 +745,7 @@ type rawRepo struct {
 
 func newDockerGroupRepo(config *NexusConfig) dockerGroupRepo {
 	return dockerGroupRepo{
-		Name:   "dockerGroup",
+		Name:   "dockergroup",
 		Online: true,
 		Storage: struct {
 			BlobStoreName               string `json:"blobStoreName"`
