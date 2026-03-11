@@ -860,7 +860,7 @@ func newDockerProxyRepos(name string, url string, username string, password stri
 	repo.NegativeCache.Enabled = true
 	repo.NegativeCache.TimeToLive = 1440 // The default 24h
 	repo.HttpClient.AutoBlock = true
-	if "dockerHub" == name {
+	if "dockerhub" == name {
 		repo.DockerProxy.IndexType = "HUB"
 		repo.DockerProxy.IndexUrl = "https://index.docker.io"
 	} else {
