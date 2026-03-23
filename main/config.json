@@ -53,6 +53,10 @@
     {
       "name": "dockerk8sio",
       "url": "https://registry.k8s.io"
+    },
+    {
+      "name": "docherghcr",
+      "url": "https://ghcr.io"
     }
   ]
 }
